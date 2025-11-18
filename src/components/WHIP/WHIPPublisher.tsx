@@ -219,7 +219,7 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
         // 解析Location头以获取session信息
         const location = response.headers.get('location')
         let sessionEndpoint = endpoint // 默认使用原始endpoint
-        let sessionId = null
+        let sessionId = ''
 
         if (location) {
           console.log('WHIP Location header:', location)
@@ -228,7 +228,7 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
           // 尝试从URL中提取whip-session
           const sessionMatch = location.match(/[?&]whip-session=([^&?']+)/)
           if (sessionMatch) {
-            sessionId = sessionMatch[1]
+            sessionId = sessionMatch[1] as string
             console.log('Extracted whip-session:', sessionId)
           }
         }
