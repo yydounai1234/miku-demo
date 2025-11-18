@@ -33,7 +33,7 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
   
   // const urlState = useFormstateX(() => new FieldState(urlFromProps ?? 'http://114.230.92.154/sdk-live/minutest000.whip?domain=miku-publish-whip.qnsdk.com'), [])
   const urlState = useFormstateX(
-    () => new FieldState(urlFormProps ?? defaultUrl),
+    () => new FieldState(urlFromProps ?? defaultUrl),
     []
   )
 
