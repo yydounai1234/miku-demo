@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useMemo } from 'react'
 import { observer } from 'mobx-react'
 import { FieldState } from 'formstate-x'
-import { Form, FormItem, Button } from 'react-icecream'
+import { Radio, Form, FormItem, Button } from 'react-icecream'
 import { TextInput, useFormstateX } from 'react-icecream/form-x'
 
 import Block from '../common/Block'
@@ -27,7 +27,7 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
 
   const sessionId = useMemo(() => generateSessionId(), [])
   const defaultUrl = useMemo(
-    () => `https://miku-play-test.qnsdk.com/sdk-live/${sessionId}.whep`,
+    () => `https://miku-whip-test.qnsdk.com/sdk-live/${sessionId}.whip`,
     [sessionId]
   )
   
@@ -66,9 +66,12 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
 
   const configForm = (
     <Form layout="horizontal" footer={null}>
-      <FormItem label="推流协议" labelVerticalAlign="text">
+      {/* <FormItem label="推流协议" labelVerticalAlign="text">
         <span style={{ display: 'inline-block', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', background: '#f5f5f5' }}>RTC/WHIP</span>
-      </FormItem>
+      </FormItem> */}
+      <FormItem label="推流协议" labelVerticalAlign="text">
+              <Radio checked>RTC/WHIP</Radio>
+            </FormItem>
       <FormItem
         label="推流地址"
         tip={urlTip}
