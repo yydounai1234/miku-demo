@@ -49,8 +49,15 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
     setIsPublishing(true)
   }, [urlState])
 
-  const handleStopPublish = useCallback(() => {
-    setIsPublishing(false)
+  const handleStopPublish = useCallback(async () => {
+    // 确保在停止发布时清理连接
+    try {
+      // 这里的逻辑将由 WHIPPublisher 的 useEffect cleanup 处理
+      // 我们只需要更新状态
+      setIsPublishing(false)
+    } catch (error) {
+      console.error('Error stopping publish:', error)
+    }
   }, [])
 
   const urlTip = (
