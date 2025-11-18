@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { observer } from 'mobx-react'
 import { FieldState } from 'formstate-x'
 import { Form, FormItem, Button } from 'react-icecream'
@@ -8,6 +8,12 @@ import Block from '../common/Block'
 import WHIPPublisher from './WHIPPublisher'
 
 import styles from '../style.m.less'
+
+function generateSessionId(prefix = 'minutest', digits = 3): string {
+  const max = 10 ** digits
+  const n = Math.floor(Math.random() * max)
+  return `${prefix}${String(n).padStart(digits, '0')}`
+}
 
 interface Props {
   url?: string
@@ -19,8 +25,17 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
   const [playCount, setPlayCount] = useState(0)
   const [isPublishing, setIsPublishing] = useState(false)
 
+  const sessionId = useMemo(() => generateSessionId(), [])
+  const defaultUrl = useMemo(
+    () => `https://miku-play-test.qnsdk.com/sdk-live/${sessionId}.whep`,
+    [sessionId]
+  )
+  
   // const urlState = useFormstateX(() => new FieldState(urlFromProps ?? 'http://114.230.92.154/sdk-live/minutest000.whip?domain=miku-publish-whip.qnsdk.com'), [])
-  const urlState = useFormstateX(() => new FieldState(urlFromProps ?? 'https://miku-whip-test.qnsdk.com/sdk-live/minutest000.whip'), [])
+  const urlState = useFormstateX(
+    () => new FieldState(urlFormProps ?? defaultUrl),
+    []
+  )
 
   const handleStartPublish = useCallback(() => {
     const newUrl = urlState.value.trim()
@@ -44,7 +59,7 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
         1.WHIP (WebRTC HTTP Ingestion Protocol) 推流地址，通常以 <code>https://</code> 开头。
       </span><br />
       <span>
-        2.此 Demo 为公共测试环境。默认流名可能被他人占用，请将推/拉流地址中的流名（如 minutest000）改为您自定义的唯一名称，并确保两处一致。
+        2.已自动生成相对唯一的测试推流名（如 {sessionId} ）。请将该流名发给两人1v1连线对端用户填入拉流地址中。在一人测试时，请将该流名填入右侧拉流地址。
       </span>
     </div>
   )
@@ -52,7 +67,7 @@ export default observer(function WHIP({ url: urlFromProps }: Props) {
   const configForm = (
     <Form layout="horizontal" footer={null}>
       <FormItem label="推流协议" labelVerticalAlign="text">
-        <span style={{ display: 'inline-block', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', background: '#f5f5f5' }}>WHIP</span>
+        <span style={{ display: 'inline-block', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: '4px', background: '#f5f5f5' }}>RTC/WHIP</span>
       </FormItem>
       <FormItem
         label="推流地址"
