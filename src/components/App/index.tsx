@@ -19,7 +19,7 @@ export default function App() {
         Miku 直播控制台
       </Link>
       <div className={styles.page}>
-        <div className={styles.header}><p>七牛云 Miku 快直播 DEMO</p><span className={styles.tag_3mFgm}>NEW</span></div>
+        <div className={styles.header}><p>七牛云 Miku快直播 1v1 DEMO</p><span className={styles.tag_3mFgm}>NEW</span></div>
         <div className={styles.row}>
           <div className={styles.column}>
             <WHIP url={whipUrl} />

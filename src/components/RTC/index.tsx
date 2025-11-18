@@ -59,19 +59,19 @@ export default observer(function RTC({ url: urlFormProps }: Props) {
       <span>
         1.WHEP (WebRTC HTTP Egress Protocol) 拉流地址，通常以 <code>https://</code> 开头。
       </span><br />
-      {/* <span>
-        2.此 Demo 为公共测试环境。默认流名可能被他人占用，请将推/拉流地址中的流名（如 minutest000）改为您自定义的唯一名称，并确保两处一致。
-      </span> */}
+      <span>
+        2.请将拉流地址中的流名（如 minutest000）改为两人1v1连线对端所用的推流名。在一人自测时，请改为左侧推流的流名。
+      </span>
     </div>
   )
 
   const configForm = (
     <Form layout="horizontal" footer={null}>
-      <FormItem label="播放协议" labelVerticalAlign="text">
-        <Radio checked>RTC</Radio>
+      <FormItem label="拉流协议" labelVerticalAlign="text">
+        <Radio checked>RTC/WHEP</Radio>
       </FormItem>
-      <FormItem label="播放地址" tip={urlTip}>
-        <TextInput state={urlState} placeholder="请输入播放地址" style={{ width: '100%' }} />
+      <FormItem label="拉流地址" tip={urlTip}>
+        <TextInput state={urlState} placeholder="请输入拉流地址" style={{ width: '100%' }} />
       </FormItem>
     </Form>
   )
@@ -82,7 +82,7 @@ export default observer(function RTC({ url: urlFormProps }: Props) {
         {configForm}
       </div>
       <div>
-        <Button type="primary" onClick={() => handlePlay()}>第二步：开始播放</Button>
+        <Button type="primary" onClick={() => handlePlay()}>第二步：开始拉流</Button>
       </div>
       <QNRTCPlayer playId={playCount} url={url} className={styles.videoContainer} />
       {alertModal}
