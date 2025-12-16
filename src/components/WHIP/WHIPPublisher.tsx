@@ -165,16 +165,127 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
             { urls: 'stun:stun.l.google.com:19302' }
           ]
         })
+        let sessionEndpoint: string | null = null
+        let sessionId = ''
+        let stopped = false
+        let restarting = false
+        let handshakeFinished = false
+        let fullRepostInProgress = false
+        let lastFullRepostAt = 0
+        const FULL_REPOST_COOLDOWN_MS = 5000
+
+        const cleanupCallbacks: Array<() => void> = []
+        const addCleanup = (fn: () => void) => cleanupCallbacks.push(fn)
+        const runCleanupCallbacks = () => {
+          while (cleanupCallbacks.length) {
+            const cb = cleanupCallbacks.pop()
+            cb?.()
+          }
+        }
+
+        const waitForIceGatheringComplete = () => new Promise<void>(resolveIce => {
+          if (pc.iceGatheringState === 'complete') {
+            resolveIce()
+            return
+          }
+          const checkState = () => {
+            if (pc.iceGatheringState === 'complete') {
+              pc.removeEventListener('icegatheringstatechange', checkState)
+              resolveIce()
+            }
+          }
+          pc.addEventListener('icegatheringstatechange', checkState)
+          setTimeout(() => {
+            pc.removeEventListener('icegatheringstatechange', checkState)
+            resolveIce()
+          }, 5000)
+        })
+
+        // 轻量恢复：仅触发 ICE 重启，不再重复 POST
+        const attemptIceRestart = async (reason: string) => {
+          console.log("?????????????????")
+          if (stopped || restarting) return
+          if (!handshakeFinished || fullRepostInProgress) return
+          restarting = true
+          try {
+            console.log(`[WHIP] Attempting ICE restart due to: ${reason}`)
+            if (typeof pc.restartIce === 'function') {
+              try {
+                pc.restartIce()
+              } catch (err) {
+                console.warn('pc.restartIce failed', err)
+              }
+            }
+          } finally {
+            restarting = false
+          }
+        }
+
+        // 重发布：连接彻底失败时再 POST 一次新的 session（无额外 DELETE）
+        const fullRepostIfNeeded = async (reason: string) => {
+          console.log(handshakeFinished, fullRepostInProgress, stopped)
+          if (stopped || fullRepostInProgress) return
+          if (!handshakeFinished) return
+          if (Date.now() - lastFullRepostAt < FULL_REPOST_COOLDOWN_MS) return
+          fullRepostInProgress = true
+          try {
+            console.log(`[WHIP] Re-POSTing WHIP session due to: ${reason}`)
+            const offer = await pc.createOffer({ iceRestart: true })
+            await pc.setLocalDescription(offer)
+            await waitForIceGatheringComplete()
+
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/sdp',
+                Authorization: 'Bearer token'
+              },
+              body: pc.localDescription?.sdp
+            })
+
+            if (!response.ok) {
+              throw new Error(`WHIP 重发布失败: ${response.status} - ${response.statusText}`)
+            }
+
+            const newLocation = response.headers.get('location')
+            if (newLocation) {
+              sessionEndpoint = newLocation
+              const sessionMatch = newLocation.match(/[?&]whip-session=([^&?']+)/)
+              if (sessionMatch) {
+                sessionId = sessionMatch[1] as string
+              }
+            }
+
+            const answerSdp = await response.text()
+            await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })
+            lastFullRepostAt = Date.now()
+            console.log('[WHIP] Re-POST completed')
+          } catch (error) {
+            console.error('[WHIP] Full repost failed:', error)
+          } finally {
+            fullRepostInProgress = false
+          }
+        }
 
         // 处理ICE连接状态
         pc.onconnectionstatechange = () => {
           console.log('RTCPeerConnection connection state changed to:', pc.connectionState)
           // 连接状态变化
+          if (pc.connectionState === 'failed') {
+            fullRepostIfNeeded('connectionstate-failed')
+          }
         }
 
         pc.oniceconnectionstatechange = () => {
           console.log('ICE connection state changed to:', pc.iceConnectionState)
           // ICE连接状态变化
+          if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+            if (pc.iceConnectionState === 'disconnected') {
+              attemptIceRestart(`ice-${pc.iceConnectionState}`)
+            } else {
+              fullRepostIfNeeded(`ice-${pc.iceConnectionState}`)
+            }
+          }
         }
 
         // 添加本地流到PeerConnection
@@ -187,20 +298,7 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
         await pc.setLocalDescription(offer)
 
         // 等待ICE收集完成
-        await new Promise<void>(iceResolve => {
-          if (pc.iceGatheringState === 'complete') {
-            iceResolve()
-          } else {
-            pc.onicegatheringstatechange = () => {
-              if (pc.iceGatheringState === 'complete') {
-                iceResolve()
-              }
-            }
-
-            // 设置超时
-            setTimeout(() => iceResolve(), 5000)
-          }
-        })
+        await waitForIceGatheringComplete()
 
         // 发送Offer到WHIP服务器
         const response = await fetch(endpoint, {
@@ -218,8 +316,6 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
 
         // 解析Location头以获取session信息
         const location = response.headers.get('location')
-        let sessionEndpoint = endpoint // 默认使用原始endpoint
-        let sessionId = ''
 
         if (location) {
           console.log('WHIP Location header:', location)
@@ -240,9 +336,13 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
           type: 'answer',
           sdp: answerSdp
         })
+        handshakeFinished = true
 
         // 添加页面关闭事件处理
         const pageCleanup = async () => {
+          if (stopped) return
+          stopped = true
+          runCleanupCallbacks()
           try {
             if (pc.connectionState === 'connected' || pc.connectionState === 'connecting') {
               // 发送 DELETE 请求到端点以断开流
@@ -282,6 +382,7 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
 
         // 添加页面卸载事件监听
         window.addEventListener('beforeunload', pageCleanup)
+        addCleanup(() => window.removeEventListener('beforeunload', pageCleanup))
 
         // 创建客户端对象，包含session信息和清理方法
         const whipClient = {
@@ -292,15 +393,7 @@ function setupWHIPPublishing(endpoint: string, stream: MediaStream): Promise<WHI
           },
           stop: () => {
             console.log('WHIP client stop called with session:', sessionId)
-
-            // 移除事件监听
-            window.removeEventListener('beforeunload', pageCleanup)
-
-            // 执行清理
             pageCleanup()
-
-            // 确保不会重复触发
-            window.removeEventListener('beforeunload', pageCleanup)
           }
         }
 
