@@ -19,7 +19,7 @@ export default function App() {
         Miku 快直播控制台
       </Link>
       <div className={styles.page}>
-        <div className={styles.header}><p>七牛云 RTC 直播 1v1 DEMO</p><span className={styles.tag_3mFgm}>NEW</span></div>
+        <div className={styles.header}><p>七牛云 Miku 快直播 RTC 1v1 DEMO</p><span className={styles.tag_3mFgm}>NEW</span></div>
         <div className={styles.row}>
           <div className={styles.column}>
             <WHIP url={whipUrl} />
@@ -67,9 +67,9 @@ function Tips() {
   return (
     <Block title="温馨提示">
       <div style={{ wordBreak: 'break-word' }}>
-        <p>1. 七牛云 RTC 直播，播放延迟小于 1 秒，适用于大部分对延迟有要求的直播场景。</p>
+        <p>1. Miku 超低延时协议直播，播放延迟小于 1 秒，适用于大部分对延迟有要求的直播场景。</p>
         {/* <p>
-          <span>2. 七牛云 RTC 直播对编码有一定限制，要求直播流中不包含 B 帧【</span>
+          <span>2. Miku 超低延时协议直播对编码有一定限制，要求直播流中不包含 B 帧【</span>
           <Link href="https://developer.qiniu.com/mikustream/12977/obs-streaming-excluding-b-frame-guidelines" target="_blank" rel="noopener">
             OBS 推流
           </Link>，
@@ -81,21 +81,21 @@ function Tips() {
         <p>
           <span>2. &lt;</span>
           <Link href="https://developer.qiniu.com/mikustream/12974/miku-fast-live-web-sdk" target="_blank" rel="noopener">
-            RTC 直播 Web SDK
+            Miku 超低延时协议直播 Web SDK
           </Link>
           <span>&gt; 需要浏览器支持 RTC 和 H264 解码，</span>
           <span>目前部分 Android 手机浏览器并未支持 RTC，在这种情况下，我们建议更换浏览器或直接使用移动端 SDK &lt;</span>
           <Link href="https://developer.qiniu.com/mikustream/12976/miku-fast-live-ios-sdk" target="_blank" rel="noopener" style={{ display: 'inline' }}>
-            RTC 直播 iOS SDK
+            Miku 超低延时协议直播 iOS SDK
           </Link>
           <span>&gt;/&lt;</span>
           <Link href="https://developer.qiniu.com/mikustream/12975/miku-fast-live-android-sdk" target="_blank" rel="noopener">
-            RTC 直播 Android SDK
+            Miku 超低延时协议直播 Android SDK
           </Link>
           <span>&gt;。</span>
         </p>
         <p style={{ marginBottom: 0 }}>
-          <span>3. 在 RTC 直播对接中有任何问题，请及时联系我们 &lt;</span>
+          <span>3. 在 Miku 快直播对接中有任何问题，请及时联系我们 &lt;</span>
           <Link href="https://support.qiniu.com/tickets/new" target="_blank" rel="noopener">工单</Link>
           <span>/400-808-9172&gt;</span>
         </p>
